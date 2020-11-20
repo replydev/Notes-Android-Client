@@ -1,0 +1,3 @@
+[submodule "app/src/main/python/MyCryptograpy"]
+	path = app/src/main/python/MyCryptograpy
+	url = https://codeberg.org/replydev/MyCryptograpy.git
