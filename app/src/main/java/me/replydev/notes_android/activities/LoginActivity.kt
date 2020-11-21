@@ -4,26 +4,31 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import android.widget.Toast
 import com.google.gson.Gson
 import me.replydev.notes_android.Connection
+import me.replydev.notes_android.EncryptedNote
 import me.replydev.notes_android.crypto.PyDiffieHellmanInstance
 import me.replydev.notes_android.R
+import me.replydev.notes_android.SimpleSocket
 import me.replydev.notes_android.crypto.PyXChaCha20Instance
-import me.replydev.notes_android.runnables.SendLoginData
+import me.replydev.notes_android.runnables.ConnectToServer
+import me.replydev.notes_android.runnables.ExchangeKey
+import me.replydev.notes_android.runnables.SendLoginDataAndWaitResponse
 import java.net.ConnectException
-import java.net.Socket
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import kotlin.collections.HashMap
 import kotlin.system.exitProcess
 
 class LoginActivity : AppCompatActivity() {
 
 
     private lateinit var ipAddress: String
-    private lateinit var s: Socket
-    private lateinit var sharedKeyForServerCommunications: String
+    private lateinit var s: SimpleSocket
+    //private lateinit var sharedKeyForServerCommunications: String
+    private lateinit var pyCryptoForServerCommunications: PyXChaCha20Instance
     private lateinit var connection: Connection
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,40 +50,39 @@ class LoginActivity : AppCompatActivity() {
 
         val gson = Gson()
         val jsonToSend = gson.toJson(map)
-        val pyXChaCha20Instance = PyXChaCha20Instance(sharedKeyForServerCommunications)
-        val encryptedJsonSafeToSend = pyXChaCha20Instance.encrypt(jsonToSend)
+
+        val encryptedJsonSafeToSend = pyCryptoForServerCommunications.encrypt(jsonToSend)
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
-        val futureText: Future<String> = executorService.submit(SendLoginData(s,encryptedJsonSafeToSend))
+        val futureText: Future<String> = executorService.submit(SendLoginDataAndWaitResponse(s,encryptedJsonSafeToSend))
 
-        val text = futureText.get()
+        val encryptedNotes = futureText.get() //if the user is logged in the server sends encrypted notes
 
-        if (text == "no"){
-            Toast.makeText(this,"Not logged in",4)
+        if (encryptedNotes == "no"){
+            println("Not logged in")
             exitProcess(-1)
         }
         else println("Logged in")
+
+        decryptNotes(encryptedNotes)
     }
 
+    private fun decryptNotes(encryptedNotesFromServerButWeHaveStillToDecryptThem: String){
+        val gson = Gson()
+        val encryptedNotesJson = pyCryptoForServerCommunications.decrypt(encryptedNotesFromServerButWeHaveStillToDecryptThem)
+        val encryptedNotes: Vector<EncryptedNote> = gson.fromJson(encryptedNotesJson, Vector<EncryptedNote>().javaClass)
+        println(encryptedNotes)
+    }
 
     private fun connectToServer(){
-
-        val t = Thread {
-            try {
-                s = Socket(ipAddress, 50000)
-                val pyDiffieHellmanInstance = PyDiffieHellmanInstance(ipAddress)
-                sharedKeyForServerCommunications = pyDiffieHellmanInstance.getSharedKey().toString()
-            } catch (e: ConnectException) {
-                e.printStackTrace()
-                //TODO Make visual error
-            }
-        }
-        t.start()
-        t.join()  //can insert millis
-
+        val executorService = Executors.newSingleThreadExecutor()
+        val simpleSocketFuture = executorService.submit(ConnectToServer(ipAddress))
+        s = simpleSocketFuture.get()
+        val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
+        pyCryptoForServerCommunications = pyCryptoFuture.get()
         if(!this::s.isInitialized){
             println("Socket not initialized")
             exitProcess(-1)
         }
-        connection = Connection(s,sharedKeyForServerCommunications)
+        //connection = Connection(s,sharedKeyForServerCommunications)
     }
 }

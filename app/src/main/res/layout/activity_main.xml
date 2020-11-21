@@ -18,7 +18,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:text="Name"
+            android:text="192.168.1.124"
             android:ems="10"
             android:id="@+id/ipAddressText"
             app:layout_constraintEnd_toEndOf="parent"
