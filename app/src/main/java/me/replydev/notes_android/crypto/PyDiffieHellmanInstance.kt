@@ -1,4 +1,4 @@
-package me.replydev.notes_android
+package me.replydev.notes_android.crypto
 
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python

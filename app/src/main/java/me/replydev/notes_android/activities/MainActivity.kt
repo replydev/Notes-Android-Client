@@ -1,21 +1,19 @@
-package me.replydev.notes_android
+package me.replydev.notes_android.activities
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Looper
 import android.view.View
 import android.widget.EditText
-import android.widget.Toast
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import java.net.Socket
+import me.replydev.notes_android.R
 
 class MainActivity : AppCompatActivity() {
 
-    private var pythonInstance: Python? = null
+    private lateinit var pythonInstance: Python
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         Python.start(AndroidPlatform(this))
 
         setContentView(R.layout.activity_main)
@@ -23,16 +21,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun connectButton(view: View){
-        Thread {
-            val editText = findViewById<EditText>(R.id.ipAddressText)
-            val ipAddress = editText.text.toString()
-            val s = Socket(ipAddress, 50000)
-            val pyDiffieHellmanInstance = PyDiffieHellmanInstance(ipAddress)
-            val sharedKey = pyDiffieHellmanInstance.getSharedKey()
-            Looper.prepare()
-            Toast.makeText(this, sharedKey.toString(), 4)
-            s.close()
-        }.start()
+        val editText = findViewById<EditText>(R.id.ipAddressText)
+        val intent = Intent(this, LoginActivity::class.java).apply {
+            putExtra("IP_ADDRESS", editText.text.toString())
+        }
+        startActivity(intent)
     }
 
     /*fun startButton(view: View){
