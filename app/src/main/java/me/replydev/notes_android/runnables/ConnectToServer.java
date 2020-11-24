@@ -1,6 +1,6 @@
 package me.replydev.notes_android.runnables;
 
-import me.replydev.notes_android.SimpleSocket;
+import me.replydev.notes_android.net.SimpleSocket;
 
 import java.util.concurrent.Callable;
 

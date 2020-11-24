@@ -1,4 +1,4 @@
-package me.replydev.notes_android;
+package me.replydev.notes_android.net;
 
 import java.io.*;
 import java.net.Socket;

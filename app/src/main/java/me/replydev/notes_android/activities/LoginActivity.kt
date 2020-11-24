@@ -1,21 +1,15 @@
 package me.replydev.notes_android.activities
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import com.google.gson.Gson
-import me.replydev.notes_android.Connection
-import me.replydev.notes_android.EncryptedNote
-import me.replydev.notes_android.crypto.PyDiffieHellmanInstance
+import me.replydev.notes_android.Globals
 import me.replydev.notes_android.R
-import me.replydev.notes_android.SimpleSocket
-import me.replydev.notes_android.crypto.PyXChaCha20Instance
 import me.replydev.notes_android.runnables.ConnectToServer
 import me.replydev.notes_android.runnables.ExchangeKey
-import me.replydev.notes_android.runnables.SendLoginDataAndWaitResponse
-import java.net.ConnectException
-import java.util.*
+import me.replydev.notes_android.runnables.SendLoginDataWaitResponseAndDecryptNotes
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -26,10 +20,9 @@ class LoginActivity : AppCompatActivity() {
 
 
     private lateinit var ipAddress: String
-    private lateinit var s: SimpleSocket
+    //private lateinit var s: SimpleSocket
     //private lateinit var sharedKeyForServerCommunications: String
-    private lateinit var pyCryptoForServerCommunications: PyXChaCha20Instance
-    private lateinit var connection: Connection
+    //private lateinit var password: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,13 +40,13 @@ class LoginActivity : AppCompatActivity() {
 
         map["username"] = usernameText.text.toString()
         map["password"] = passwordText.text.toString()
+        Globals.password = passwordText.text.toString()
 
-        val gson = Gson()
-        val jsonToSend = gson.toJson(map)
+        val jsonToSend = Globals.gson.toJson(map)
 
-        val encryptedJsonSafeToSend = pyCryptoForServerCommunications.encrypt(jsonToSend)
+        val encryptedJsonSafeToSend = Globals.pyCryptoForServerCommunications.encrypt(jsonToSend)
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
-        val futureText: Future<String> = executorService.submit(SendLoginDataAndWaitResponse(s,encryptedJsonSafeToSend))
+        val futureText: Future<String> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(Globals.socket,encryptedJsonSafeToSend))
 
         val encryptedNotes = futureText.get() //if the user is logged in the server sends encrypted notes
 
@@ -66,23 +59,24 @@ class LoginActivity : AppCompatActivity() {
         decryptNotes(encryptedNotes)
     }
 
-    private fun decryptNotes(encryptedNotesFromServerButWeHaveStillToDecryptThem: String){
-        val gson = Gson()
-        val encryptedNotesJson = pyCryptoForServerCommunications.decrypt(encryptedNotesFromServerButWeHaveStillToDecryptThem)
-        val encryptedNotes: Vector<EncryptedNote> = gson.fromJson(encryptedNotesJson, Vector<EncryptedNote>().javaClass)
-        println(encryptedNotes)
+    private fun decryptNotes(encryptedNotes: String){
+        val intent = Intent(this, NotesActivity::class.java).apply {
+            putExtra("ENCRYPTED_NOTES", encryptedNotes)
+            putExtra("PASSWORD", Globals.password)
+        }
+        startActivity(intent)
     }
 
     private fun connectToServer(){
         val executorService = Executors.newSingleThreadExecutor()
         val simpleSocketFuture = executorService.submit(ConnectToServer(ipAddress))
-        s = simpleSocketFuture.get()
+        Globals.socket = simpleSocketFuture.get()
         val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
-        pyCryptoForServerCommunications = pyCryptoFuture.get()
-        if(!this::s.isInitialized){
+        Globals.pyCryptoForServerCommunications = pyCryptoFuture.get()
+        /*if(!this::s.isInitialized){
             println("Socket not initialized")
             exitProcess(-1)
-        }
+        }*/
         //connection = Connection(s,sharedKeyForServerCommunications)
     }
 }

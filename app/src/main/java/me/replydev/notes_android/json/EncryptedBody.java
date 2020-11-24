@@ -1,17 +1,6 @@
-package me.replydev.notes_android;
+package me.replydev.notes_android.json;
 
-public class EncryptedNote {
-
-    private String salt;
-    private EncryptedBody encryptedJson;
-
-
-
-
-
-}
-
-class EncryptedBody{
+public class EncryptedBody {
     private String nonce;
     private String salt;
     private String header;
