@@ -1,10 +1,10 @@
 package me.replydev.notes_android.activities
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import me.replydev.notes_android.Globals
 import me.replydev.notes_android.R
 import me.replydev.notes_android.json.Note
 import me.replydev.notes_android.runnables.SendNoteToServer
@@ -33,7 +33,12 @@ class AddNoteActivity : AppCompatActivity() {
         SecureRandom().nextBytes(randomSaltBytes)
         val saltBase64 = Base64.getEncoder().encodeToString(randomSaltBytes)
         val note = Note(id,userId,saltBase64,titleAddNoteEditText.text.toString(),bodyAddNoteEditText.text.toString())
-        Globals.notes.add(note)
+        val resultCode = 1;
+        val resultIntent = Intent()
+        resultIntent.putExtra("NOTE", note.toJson())
+        setResult(resultCode, resultIntent)
+
+
         val executorService = Executors.newSingleThreadExecutor()
         executorService.submit(SendNoteToServer(note))
         finish()

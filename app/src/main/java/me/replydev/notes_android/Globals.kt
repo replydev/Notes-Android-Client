@@ -9,7 +9,6 @@ import kotlin.properties.Delegates
 class Globals {
     companion object{
         val gson = Gson()
-        var notes = ArrayList<Note>()
         lateinit var socket: SimpleSocket
         lateinit var password: String
         lateinit var pyCryptoForServerCommunications: PyXChaCha20Instance
