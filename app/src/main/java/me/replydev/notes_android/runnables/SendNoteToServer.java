@@ -1,6 +1,5 @@
 package me.replydev.notes_android.runnables;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import me.replydev.notes_android.Globals;
 import me.replydev.notes_android.crypto.KeyGenerator;
@@ -29,10 +28,9 @@ public class SendNoteToServer implements Runnable{
             PyXChaCha20Instance pyXChaCha20Instance = new PyXChaCha20Instance(key);
             String encryptedJson = pyXChaCha20Instance.encrypt(json);
             String jsonObjectThatWillBeStoredInServer = buildJson(this.n.getId(),Globals.Companion.getUserId(),encryptedJson,salt);
-            String encryptedJsonObjectThatWillBeStoredInServer = Globals.pyCryptoForServerCommunications.encrypt(jsonObjectThatWillBeStoredInServer);
-            Globals.socket.send(encryptedJsonObjectThatWillBeStoredInServer);
+            Globals.encryptedSocket.send(jsonObjectThatWillBeStoredInServer);
 
-            String response = Globals.socket.read();
+            String response = Globals.encryptedSocket.read();
 
             if(response.equalsIgnoreCase("yes")){
                 System.out.println("Server has accepted new note");
@@ -52,18 +50,6 @@ public class SendNoteToServer implements Runnable{
         jsonObject.addProperty("author",author);
         jsonObject.addProperty("salt",salt);
         jsonObject.add("encrypted",Globals.Companion.getGson().toJsonTree(encryptedBody));
-            /*
-            {
-	            "salt": $generated_salt,
-	            "encrypted": {
-                    'nonce': b64encode(nonce).decode('utf-8'),
-                    'salt': b64encode(salt).decode('utf-8'),
-                    'header': b64encode(header).decode('utf-8'),
-                    'cipher_text': b64encode(cipher_text).decode('utf-8'),
-                    'tag': b64encode(tag).decode('utf-8')
-	            }
-            }
-             */
         return jsonObject.toString();
     }
 }

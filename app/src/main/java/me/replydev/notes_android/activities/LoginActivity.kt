@@ -43,10 +43,8 @@ class LoginActivity : AppCompatActivity() {
         Globals.password = passwordText.text.toString()
 
         val jsonToSend = Globals.gson.toJson(map)
-
-        val encryptedJsonSafeToSend = Globals.pyCryptoForServerCommunications.encrypt(jsonToSend)
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
-        val futureText: Future<String> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(Globals.socket,encryptedJsonSafeToSend))
+        val futureText: Future<String> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(jsonToSend))
 
         val encryptedNotes = futureText.get() //if the user is logged in the server sends encrypted notes
 
@@ -70,9 +68,9 @@ class LoginActivity : AppCompatActivity() {
     private fun connectToServer(){
         val executorService = Executors.newSingleThreadExecutor()
         val simpleSocketFuture = executorService.submit(ConnectToServer(ipAddress))
-        Globals.socket = simpleSocketFuture.get()
+        Globals.encryptedSocket = simpleSocketFuture.get()
         val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
-        Globals.pyCryptoForServerCommunications = pyCryptoFuture.get()
+        Globals.encryptedSocket.setEncryptionInstance(pyCryptoFuture.get())
         /*if(!this::s.isInitialized){
             println("Socket not initialized")
             exitProcess(-1)
