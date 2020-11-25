@@ -36,7 +36,9 @@ class NotesActivity : AppCompatActivity() {
         val encryptedNotesJson = intent.getStringExtra("ENCRYPTED_NOTES")
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
 
-        val encryptedNotes: ArrayList<EncryptedNote> = Globals.gson.fromJson(encryptedNotesJson, ArrayList<EncryptedNote>().javaClass)
+        val encryptedNotesListJson: ArrayList<String> = Globals.gson.fromJson(encryptedNotesJson,ArrayList<String>().javaClass)
+
+        val encryptedNotes: ArrayList<EncryptedNote> = getEncryptedNotes(encryptedNotesListJson)
 
         val futureNotes = executorService.submit(DecryptNotes(encryptedNotes,Globals.password))
 
@@ -45,6 +47,15 @@ class NotesActivity : AppCompatActivity() {
         val notesListView = findViewById<ListView>(R.id.notesListView)
 
         notesListView.adapter = notesAdapter
+    }
+
+    private fun getEncryptedNotes(encryptedNotesListJson: ArrayList<String>): ArrayList<EncryptedNote> {
+        val encryptedNotes = ArrayList<EncryptedNote>()
+        for(s in encryptedNotesListJson){
+            val temp: EncryptedNote = Globals.gson.fromJson(s, EncryptedNote::class.java)
+            encryptedNotes.add(temp)
+        }
+        return encryptedNotes
     }
 
     fun addNewNote(view: View){
