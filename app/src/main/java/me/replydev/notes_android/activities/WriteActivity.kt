@@ -13,7 +13,7 @@ import java.util.*
 import java.util.concurrent.Executors
 import kotlin.properties.Delegates
 
-class AddNoteActivity : AppCompatActivity() {
+class WriteActivity : AppCompatActivity() {
 
     private var id by Delegates.notNull<Int>()
     private var userId by Delegates.notNull<Int>()

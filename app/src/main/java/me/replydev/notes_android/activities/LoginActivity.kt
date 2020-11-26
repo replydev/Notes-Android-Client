@@ -16,14 +16,9 @@ import java.util.concurrent.Future
 import kotlin.collections.HashMap
 import kotlin.system.exitProcess
 
-class LoginActivity : AppCompatActivity() {
-
-
+class LoginActivity : AppCompatActivity(){
     private lateinit var ipAddress: String
-    //private lateinit var s: SimpleSocket
-    //private lateinit var sharedKeyForServerCommunications: String
-    //private lateinit var password: String
-
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login_activity)
@@ -44,22 +39,23 @@ class LoginActivity : AppCompatActivity() {
 
         val jsonToSend = Globals.gson.toJson(map)
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
-        val futureText: Future<String> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(jsonToSend))
+        val futureText: Future<ArrayList<String>> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(jsonToSend))
 
         val encryptedNotes = futureText.get() //if the user is logged in the server sends encrypted notes
 
-        if (encryptedNotes == "no"){
+        /*if (encryptedNotes == "no"){
             println("Not logged in")
             exitProcess(-1)
         }
-        else println("Logged in")
+        else println("Logged in")*/
 
         decryptNotes(encryptedNotes)
     }
 
-    private fun decryptNotes(encryptedNotes: String){
+    private fun decryptNotes(encryptedNotes: ArrayList<String>){
+        val encryptedNotesJson = Globals.gson.toJson(encryptedNotes)
         val intent = Intent(this, NotesActivity::class.java).apply {
-            putExtra("ENCRYPTED_NOTES", encryptedNotes)
+            putExtra("ENCRYPTED_NOTES", encryptedNotesJson)
             putExtra("PASSWORD", Globals.password)
         }
         startActivity(intent)
@@ -71,10 +67,5 @@ class LoginActivity : AppCompatActivity() {
         Globals.encryptedSocket = simpleSocketFuture.get()
         val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
         Globals.encryptedSocket.setEncryptionInstance(pyCryptoFuture.get())
-        /*if(!this::s.isInitialized){
-            println("Socket not initialized")
-            exitProcess(-1)
-        }*/
-        //connection = Connection(s,sharedKeyForServerCommunications)
     }
 }

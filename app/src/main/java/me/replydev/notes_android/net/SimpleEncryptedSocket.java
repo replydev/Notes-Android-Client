@@ -44,6 +44,10 @@ public class SimpleEncryptedSocket implements Closeable {
         }
     }
 
+    public boolean isClosed(){
+        return s.isClosed();
+    }
+
     @Override
     public void close() throws IOException {
         writer.close();

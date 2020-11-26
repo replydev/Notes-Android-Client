@@ -3,6 +3,7 @@ package me.replydev.notes_android.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import me.replydev.notes_android.Globals
@@ -16,7 +17,7 @@ import java.util.concurrent.Executors
 import kotlin.properties.Delegates
 
 
-class NotesActivity : AppCompatActivity() {
+class NotesActivity : AppCompatActivity(){
     private lateinit var notesAdapter: NotesAdapter
     private var userId by Delegates.notNull<Int>()
     private lateinit var notes: ArrayList<Note>
@@ -67,7 +68,7 @@ class NotesActivity : AppCompatActivity() {
         } else{
             notes[notes.size - 1].id
         }
-        val intent = Intent(this, AddNoteActivity::class.java).apply {
+        val intent = Intent(this, WriteActivity::class.java).apply {
             putExtra("ID", lastId)
             putExtra("USER_ID", userId)
         }
@@ -82,7 +83,7 @@ class NotesActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == 1) {
             val noteJson = data?.getStringExtra("NOTE")
-            val note: Note = Globals.gson.fromJson(noteJson,Note::class.java)
+            val note: Note = Globals.gson.fromJson(noteJson, Note::class.java)
             notes.add(note)
             notesAdapter.notifyDataSetChanged()
         }

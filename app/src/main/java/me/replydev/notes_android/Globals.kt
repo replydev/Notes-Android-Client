@@ -11,5 +11,6 @@ class Globals {
         lateinit var encryptedSocket: SimpleEncryptedSocket
         lateinit var password: String
         var userId by Delegates.notNull<Int>()
+        var createNoteId by Delegates.notNull<Int>()
     }
 }

@@ -27,14 +27,14 @@ public class NotesAdapter extends ArrayAdapter<Note> {
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         Note n = notes.get(position);
         if(convertView == null){
-            convertView = LayoutInflater.from(context).inflate(R.layout.row_view,parent,false);
+            convertView = LayoutInflater.from(context).inflate(R.layout.note_list_item,parent,false);
         }
 
-        TextView notesTitleText = convertView.findViewById(R.id.notesTitleText);
-        TextView notesBodyText = convertView.findViewById(R.id.notesBodyText);
+        TextView notesTitleText = convertView.findViewById(R.id.noteTitleTextView);
+        //TextView notesBodyText = convertView.findViewById(R.id.notesBodyText);
 
         notesTitleText.setText(n.getTitle());
-        notesBodyText.setText(n.getBody());
+        //notesBodyText.setText(n.getBody());
 
         return convertView;
     }

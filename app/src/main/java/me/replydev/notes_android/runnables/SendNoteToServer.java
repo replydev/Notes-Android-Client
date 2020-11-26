@@ -29,10 +29,9 @@ public class SendNoteToServer implements Runnable{
             String encryptedJson = pyXChaCha20Instance.encrypt(json);
             String jsonObjectThatWillBeStoredInServer = buildJson(this.n.getId(),Globals.Companion.getUserId(),encryptedJson,salt);
             Globals.encryptedSocket.send(jsonObjectThatWillBeStoredInServer);
-
             String response = Globals.encryptedSocket.read();
 
-            if(response.equalsIgnoreCase("yes")){
+            if(response.equalsIgnoreCase("ok")){
                 System.out.println("Server has accepted new note");
             }
             else{
