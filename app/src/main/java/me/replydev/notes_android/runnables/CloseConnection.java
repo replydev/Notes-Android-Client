@@ -8,7 +8,7 @@ public class CloseConnection implements Runnable{
     @Override
     public void run() {
         try {
-            Globals.Companion.getEncryptedSocket().close();
+            Globals.INSTANCE.getEncryptedSocket().close();
         } catch (IOException e) {
             e.printStackTrace();
         }

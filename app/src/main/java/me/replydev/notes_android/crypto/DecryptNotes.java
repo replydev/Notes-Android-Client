@@ -31,9 +31,9 @@ public class DecryptNotes implements Callable<ArrayList<Note>> {
 
     public Note decrypt(EncryptedNote encryptedNote) throws InvalidKeySpecException, NoSuchAlgorithmException {
         String salt = encryptedNote.getSalt();
-        String encryptedJson = Globals.Companion.getGson().toJson(encryptedNote.getEncryptedJson());
+        String encryptedJson = Globals.INSTANCE.getGson().toJson(encryptedNote.getEncryptedJson());
         PyXChaCha20Instance pyXChaCha20Instance = new PyXChaCha20Instance(KeyGenerator.generateKey(password,salt));
         String decryptedJson = pyXChaCha20Instance.decrypt(encryptedJson);
-        return Globals.Companion.getGson().fromJson(decryptedJson,Note.class);
+        return Globals.INSTANCE.getGson().fromJson(decryptedJson,Note.class);
     }
 }

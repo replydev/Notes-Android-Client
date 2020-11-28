@@ -22,12 +22,12 @@ public class SendNoteToServer implements Runnable{
     @Override
     public void run() {
         String salt = this.n.getSalt();
-        String json = Globals.Companion.getGson().toJson(this.n);
+        String json = Globals.INSTANCE.getGson().toJson(this.n);
         try {
             String key = KeyGenerator.generateKey(Globals.password,salt);
             PyXChaCha20Instance pyXChaCha20Instance = new PyXChaCha20Instance(key);
             String encryptedJson = pyXChaCha20Instance.encrypt(json);
-            String jsonObjectThatWillBeStoredInServer = buildJson(this.n.getId(),Globals.Companion.getUserId(),encryptedJson,salt);
+            String jsonObjectThatWillBeStoredInServer = buildJson(this.n.getId(),Globals.INSTANCE.getUserId(),encryptedJson,salt);
             Globals.encryptedSocket.send(jsonObjectThatWillBeStoredInServer);
             String response = Globals.encryptedSocket.read();
 
@@ -43,12 +43,12 @@ public class SendNoteToServer implements Runnable{
     }
 
     private String buildJson(int id,int author,String encryptedJson,String salt){
-        EncryptedBody encryptedBody = Globals.Companion.getGson().fromJson(encryptedJson,EncryptedBody.class);
+        EncryptedBody encryptedBody = Globals.INSTANCE.getGson().fromJson(encryptedJson,EncryptedBody.class);
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("id",id);
         jsonObject.addProperty("author",author);
         jsonObject.addProperty("salt",salt);
-        jsonObject.add("encrypted",Globals.Companion.getGson().toJsonTree(encryptedBody));
+        jsonObject.add("encrypted",Globals.INSTANCE.getGson().toJsonTree(encryptedBody));
         return jsonObject.toString();
     }
 }

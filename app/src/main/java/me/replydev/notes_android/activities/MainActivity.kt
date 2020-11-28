@@ -4,7 +4,9 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import me.replydev.notes_android.Globals
@@ -13,10 +15,12 @@ import me.replydev.notes_android.runnables.CloseConnection
 import me.replydev.notes_android.runnables.ConnectToServer
 import me.replydev.notes_android.runnables.ExchangeKey
 import me.replydev.notes_android.runnables.SendLoginDataWaitResponseAndDecryptNotes
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import kotlin.collections.HashMap
+import kotlin.math.log
 import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity(){
@@ -44,6 +48,10 @@ class MainActivity : AppCompatActivity(){
     }
 
     fun loginButton(view: View){
+        val statusTextView = findViewById<TextView>(R.id.statusTextView)
+        runOnUiThread{
+            statusTextView.text = "Login..."
+        }
         val usernameText = findViewById<EditText>(R.id.usernameText)
         val passwordText = findViewById<EditText>(R.id.passwordText)
 
@@ -52,19 +60,16 @@ class MainActivity : AppCompatActivity(){
         map["username"] = usernameText.text.toString()
         map["password"] = passwordText.text.toString()
         Globals.password = passwordText.text.toString()
-
         val jsonToSend = Globals.gson.toJson(map)
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
         val futureText: Future<ArrayList<String>> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(jsonToSend))
-
-        val encryptedNotes = futureText.get() //if the user is logged in the server sends encrypted notes
-
-        /*if (encryptedNotes == "no"){
-            println("Not logged in")
-            exitProcess(-1)
+        val encryptedNotes  = futureText.get() //if the user is logged in the server sends encrypted notes
+        if (encryptedNotes == null){
+            runOnUiThread{
+                statusTextView.text = "Invalid user or password"
+            }
+            return
         }
-        else println("Logged in")*/
-
         decryptNotes(encryptedNotes)
     }
 
@@ -78,10 +83,22 @@ class MainActivity : AppCompatActivity(){
     }
 
     private fun connectToServer(){
-        val executorService = Executors.newSingleThreadExecutor()
-        val simpleSocketFuture = executorService.submit(ConnectToServer(ipAddress))
-        Globals.encryptedSocket = simpleSocketFuture.get()
-        val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
-        Globals.encryptedSocket.setEncryptionInstance(pyCryptoFuture.get())
+        Thread{
+            val loginButton = findViewById<Button>(R.id.loginButton)
+            val statusTextView = findViewById<TextView>(R.id.statusTextView)
+            runOnUiThread{
+                loginButton.isEnabled = false //block login button until we get connected
+                statusTextView.text = "Connecting to $ipAddress"
+            }
+            val executorService = Executors.newSingleThreadExecutor()
+            val simpleSocketFuture = executorService.submit(ConnectToServer(ipAddress))
+            Globals.encryptedSocket = simpleSocketFuture.get()
+            val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
+            Globals.encryptedSocket.setEncryptionInstance(pyCryptoFuture.get())
+            runOnUiThread{
+                loginButton.isEnabled = true
+                statusTextView.text = "Connected!"
+            }
+        }.start()
     }
 }

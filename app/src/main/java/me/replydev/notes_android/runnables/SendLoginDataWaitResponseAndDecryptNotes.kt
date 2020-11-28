@@ -5,9 +5,14 @@ import java.util.concurrent.Callable
 
 class SendLoginDataWaitResponseAndDecryptNotes(private val userPassJsonData: String) : Callable<ArrayList<String>> {
     @Throws(Exception::class)
-    override fun call(): ArrayList<String> {
+    override fun call(): ArrayList<String>? {
         Globals.encryptedSocket.send(userPassJsonData)
-        Globals.userId = Globals.encryptedSocket.read().toInt()
+        val loginResponse = Globals.encryptedSocket.read()
+        if (loginResponse == "no"){
+            println("Wrong password!")
+            return null
+        }
+        Globals.userId = loginResponse.toInt()
         Globals.encryptedSocket.send("")
 
         var messageFromServer = Globals.encryptedSocket.read()
