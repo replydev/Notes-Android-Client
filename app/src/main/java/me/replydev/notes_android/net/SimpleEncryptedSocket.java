@@ -1,5 +1,6 @@
 package me.replydev.notes_android.net;
 
+import me.replydev.notes_android.Messages;
 import me.replydev.notes_android.crypto.PyXChaCha20Instance;
 
 import java.io.*;
@@ -50,6 +51,7 @@ public class SimpleEncryptedSocket implements Closeable {
 
     @Override
     public void close() throws IOException {
+        send(Messages.CLOSE_CONNECTION);
         writer.close();
         reader.close();
         s.close();
