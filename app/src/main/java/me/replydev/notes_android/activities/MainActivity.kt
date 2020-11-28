@@ -15,12 +15,11 @@ import me.replydev.notes_android.runnables.CloseConnection
 import me.replydev.notes_android.runnables.ConnectToServer
 import me.replydev.notes_android.runnables.ExchangeKey
 import me.replydev.notes_android.runnables.SendLoginDataWaitResponseAndDecryptNotes
-import java.util.concurrent.CompletableFuture
+import me.replydev.notes_android.utils.PasswordChecker
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import kotlin.collections.HashMap
-import kotlin.math.log
 import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity(){
@@ -37,13 +36,20 @@ class MainActivity : AppCompatActivity(){
 
     override fun onResume() {
         super.onResume()
+        val connectButton = findViewById<Button>(R.id.connectButton)
         if(firstTime){
             connectToServer()
             firstTime = false
+            connectButton.isEnabled = false
         }
         else{
             val executorService: ExecutorService = Executors.newSingleThreadExecutor()
-            executorService.submit(CloseConnection())
+            executorService.execute(CloseConnection())
+            val loginButton = findViewById<Button>(R.id.loginButton)
+            runOnUiThread{
+                loginButton.isEnabled = false
+                connectButton.isEnabled = true
+            }
         }
     }
 
@@ -55,22 +61,41 @@ class MainActivity : AppCompatActivity(){
         val usernameText = findViewById<EditText>(R.id.usernameText)
         val passwordText = findViewById<EditText>(R.id.passwordText)
 
+        val username = usernameText.text.toString()
+        val password = passwordText.text.toString()
+
+        if (!goodPassword(password)){
+            runOnUiThread{
+                statusTextView.text = "Bad password, insert at least 1 Upper char, 2 number char and 1 special char, with a minimum length of 8"
+            }
+            return
+        }
+
         val map = HashMap<String,String>()
 
-        map["username"] = usernameText.text.toString()
-        map["password"] = passwordText.text.toString()
-        Globals.password = passwordText.text.toString()
+        map["username"] = username
+        map["password"] = password
+        Globals.password = password
         val jsonToSend = Globals.gson.toJson(map)
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
         val futureText: Future<ArrayList<String>> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(jsonToSend))
         val encryptedNotes  = futureText.get() //if the user is logged in the server sends encrypted notes
         if (encryptedNotes == null){
+            executorService.execute(CloseConnection())
             runOnUiThread{
                 statusTextView.text = "Invalid user or password"
+                val loginButton = findViewById<Button>(R.id.loginButton)
+                val connectButton = findViewById<Button>(R.id.connectButton)
+                loginButton.isEnabled = false
+                connectButton.isEnabled = true
             }
             return
         }
         decryptNotes(encryptedNotes)
+    }
+
+    private fun goodPassword(password: String): Boolean {
+        return PasswordChecker.checkPwd(password)
     }
 
     private fun decryptNotes(encryptedNotes: ArrayList<String>){
@@ -80,6 +105,10 @@ class MainActivity : AppCompatActivity(){
             putExtra("PASSWORD", Globals.password)
         }
         startActivity(intent)
+    }
+
+    fun connectToServer(view: View){
+        connectToServer()
     }
 
     private fun connectToServer(){

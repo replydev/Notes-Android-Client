@@ -1,32 +1,35 @@
-package me.replydev.notes_android.crypto;
+package me.replydev.notes_android.runnables;
 
 import me.replydev.notes_android.Globals;
+import me.replydev.notes_android.crypto.KeyGenerator;
+import me.replydev.notes_android.crypto.PyXChaCha20Instance;
 import me.replydev.notes_android.json.EncryptedNote;
 import me.replydev.notes_android.json.Note;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 
-public class DecryptNotes implements Callable<ArrayList<Note>> {
+public class DecryptNotes implements Runnable{
     private final ArrayList<EncryptedNote> encryptedNotes;
     private final String password;
+    private final ArrayList<Note> notes;
 
-    public DecryptNotes(ArrayList<EncryptedNote> encryptedNotes, String password){
+    public DecryptNotes(ArrayList<EncryptedNote> encryptedNotes, String password, ArrayList<Note> notes){
         this.encryptedNotes = encryptedNotes;
         this.password = password;
+        this.notes = notes;
     }
 
     @Override
-    public ArrayList<Note> call() throws Exception {
-        ArrayList<Note> notes = new ArrayList<>();
-
+    public void run(){
         for(EncryptedNote encryptedNote : encryptedNotes){
-            notes.add(decrypt(encryptedNote));
+            try {
+                notes.add(decrypt(encryptedNote));
+            } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
         }
-
-        return notes;
     }
 
     public Note decrypt(EncryptedNote encryptedNote) throws InvalidKeySpecException, NoSuchAlgorithmException {

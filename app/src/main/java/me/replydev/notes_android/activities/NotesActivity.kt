@@ -3,13 +3,12 @@ package me.replydev.notes_android.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.AdapterView
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import me.replydev.notes_android.Globals
 import me.replydev.notes_android.R
 import me.replydev.notes_android.activities.adapters.NotesAdapter
-import me.replydev.notes_android.crypto.DecryptNotes
+import me.replydev.notes_android.runnables.DecryptNotes
 import me.replydev.notes_android.json.EncryptedNote
 import me.replydev.notes_android.json.Note
 import java.util.concurrent.ExecutorService
@@ -25,32 +24,30 @@ class NotesActivity : AppCompatActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notes)
-
         userId = intent.getIntExtra("USER_ID", -1)
-
         val encryptedNotesJson = intent.getStringExtra("ENCRYPTED_NOTES")
         val executorService: ExecutorService = Executors.newSingleThreadExecutor()
-
         val encryptedNotesListJson: ArrayList<String> = Globals.gson.fromJson(
             encryptedNotesJson,
             ArrayList<String>().javaClass
         )
-
         val encryptedNotes: ArrayList<EncryptedNote> = getEncryptedNotes(encryptedNotesListJson)
-
-        val futureNotes = executorService.submit(DecryptNotes(encryptedNotes, Globals.password))
-
-        notes = futureNotes.get()
-
+        notes = ArrayList() //already initialized for containing notes
         notesAdapter = NotesAdapter(
             applicationContext,
             R.layout.note_list_item,
             notes
         )
-
         val notesListView = findViewById<ListView>(R.id.notesListView)
-
         notesListView.adapter = notesAdapter
+        executorService.execute(
+            DecryptNotes(
+                encryptedNotes,
+                Globals.password,
+                notes
+            )
+        )
+        notesAdapter.notifyDataSetChanged()
     }
 
     private fun getEncryptedNotes(encryptedNotesListJson: ArrayList<String>): ArrayList<EncryptedNote> {
