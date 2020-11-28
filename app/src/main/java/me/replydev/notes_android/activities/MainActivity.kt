@@ -7,33 +7,66 @@ import android.view.View
 import android.widget.EditText
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
+import me.replydev.notes_android.Globals
 import me.replydev.notes_android.R
+import me.replydev.notes_android.runnables.ConnectToServer
+import me.replydev.notes_android.runnables.ExchangeKey
+import me.replydev.notes_android.runnables.SendLoginDataWaitResponseAndDecryptNotes
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import kotlin.collections.HashMap
 
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var pythonInstance: Python
+class MainActivity : AppCompatActivity(){
+    private lateinit var ipAddress: String
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.main_activity)
         Python.start(AndroidPlatform(this))
-
-        setContentView(R.layout.activity_main)
-        pythonInstance = Python.getInstance()
+        ipAddress = "192.168.1.124"
+        connectToServer()
     }
 
-    fun connectButton(view: View){
-        val editText = findViewById<EditText>(R.id.ipAddressText)
-        val intent = Intent(this, LoginActivity::class.java).apply {
-            putExtra("IP_ADDRESS", editText.text.toString())
+    fun loginButton(view: View){
+        val usernameText = findViewById<EditText>(R.id.usernameText)
+        val passwordText = findViewById<EditText>(R.id.passwordText)
+
+        val map = HashMap<String,String>()
+
+        map["username"] = usernameText.text.toString()
+        map["password"] = passwordText.text.toString()
+        Globals.password = passwordText.text.toString()
+
+        val jsonToSend = Globals.gson.toJson(map)
+        val executorService: ExecutorService = Executors.newSingleThreadExecutor()
+        val futureText: Future<ArrayList<String>> = executorService.submit(SendLoginDataWaitResponseAndDecryptNotes(jsonToSend))
+
+        val encryptedNotes = futureText.get() //if the user is logged in the server sends encrypted notes
+
+        /*if (encryptedNotes == "no"){
+            println("Not logged in")
+            exitProcess(-1)
+        }
+        else println("Logged in")*/
+
+        decryptNotes(encryptedNotes)
+    }
+
+    private fun decryptNotes(encryptedNotes: ArrayList<String>){
+        val encryptedNotesJson = Globals.gson.toJson(encryptedNotes)
+        val intent = Intent(this, NotesActivity::class.java).apply {
+            putExtra("ENCRYPTED_NOTES", encryptedNotesJson)
+            putExtra("PASSWORD", Globals.password)
         }
         startActivity(intent)
     }
 
-    /*fun startButton(view: View){
-        val editText = findViewById<EditText>(R.id.editTextTextPersonName)
-        val textView = findViewById<TextView>(R.id.textView)
-        val cryptoModule = pythonInstance?.getModule("MyCryptograpy.XChaCha20Py")
-        val cryptoObject = cryptoModule?.callAttr("XChaCha20Crypto",editText.text.toString())
-        val json = cryptoObject?.callAttr("encrypt","plain text")
-        textView.text = json.toString()
-    }*/
+    private fun connectToServer(){
+        val executorService = Executors.newSingleThreadExecutor()
+        val simpleSocketFuture = executorService.submit(ConnectToServer(ipAddress))
+        Globals.encryptedSocket = simpleSocketFuture.get()
+        val pyCryptoFuture = executorService.submit(ExchangeKey(ipAddress))
+        Globals.encryptedSocket.setEncryptionInstance(pyCryptoFuture.get())
+    }
 }

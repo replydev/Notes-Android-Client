@@ -44,7 +44,7 @@ class NotesActivity : AppCompatActivity(){
 
         notesAdapter = NotesAdapter(
             applicationContext,
-            R.layout.row_view,
+            R.layout.note_list_item,
             notes
         )
 
