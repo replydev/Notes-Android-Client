@@ -1,5 +1,6 @@
 package me.replydev.notes_android
 
+import me.replydev.notes_android.utils.PasswordChecker
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -11,7 +12,7 @@ import org.junit.Assert.*
  */
 class ExampleUnitTest {
     @Test
-    fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+    fun checkPwd() {
+        println(PasswordChecker.checkPwd("W@127dfb"))
     }
 }
