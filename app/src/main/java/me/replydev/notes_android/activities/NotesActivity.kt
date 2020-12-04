@@ -3,14 +3,15 @@ package me.replydev.notes_android.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import me.replydev.notes_android.Globals
 import me.replydev.notes_android.R
 import me.replydev.notes_android.activities.adapters.NotesAdapter
-import me.replydev.notes_android.runnables.DecryptNotes
 import me.replydev.notes_android.json.EncryptedNote
 import me.replydev.notes_android.json.Note
+import me.replydev.notes_android.runnables.DecryptNotes
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.properties.Delegates
@@ -40,6 +41,16 @@ class NotesActivity : AppCompatActivity(){
         )
         val notesListView = findViewById<ListView>(R.id.notesListView)
         notesListView.adapter = notesAdapter
+
+        notesListView.setOnItemClickListener { adapterView: AdapterView<*>, view1: View, i: Int, l: Long ->
+            val note: Note = adapterView.getItemAtPosition(i) as Note
+            val intent = Intent(this, WriteActivity::class.java).apply {
+                putExtra("ID", note.id)
+                putExtra("JSON", note.toJson())
+            }
+            startActivityForResult(intent, 1)
+            //println(note)
+        }
         executorService.execute(
             DecryptNotes(
                 encryptedNotes,
@@ -63,7 +74,7 @@ class NotesActivity : AppCompatActivity(){
         val lastId = if(notes.size == 0){
             0
         } else{
-            notes[notes.size - 1].id
+            notes[notes.size - 1].id + 1
         }
         val intent = Intent(this, WriteActivity::class.java).apply {
             putExtra("ID", lastId)
@@ -78,11 +89,21 @@ class NotesActivity : AppCompatActivity(){
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == 1) {
-            val noteJson = data?.getStringExtra("NOTE")
+        if (resultCode == 1) { //add new note
+            val noteJson = data?.getStringExtra("NOTE") ?: return //return if data?.getStringExtra("NOTE") is null
             val note: Note = Globals.gson.fromJson(noteJson, Note::class.java)
             notes.add(note)
-            notesAdapter.notifyDataSetChanged()
         }
+        else if(resultCode == 2){  //update existing note
+            val noteJson = data?.getStringExtra("NOTE") ?: return //return if data?.getStringExtra("NOTE") is null
+            val note: Note = Globals.gson.fromJson(noteJson, Note::class.java)
+            for (i in 0 until notes.size) {
+                if(note.id == notes[i].id){
+                    notes[i] = note
+                    break
+                }
+            }
+        }
+        notesAdapter.notifyDataSetChanged()
     }
 }
